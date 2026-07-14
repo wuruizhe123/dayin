@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ziddy 安装器</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Microsoft YaHei', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+    .container {
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      width: 100%;
+      max-width: 480px;
+      overflow: hidden;
+    }
+    .header {
+      background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+      padding: 24px;
+      text-align: center;
+    }
+    .header h1 {
+      color: white;
+      font-size: 24px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    .header p {
+      color: rgba(255, 255, 255, 0.8);
+      font-size: 14px;
+    }
+    .scan-btn {
+      margin: 24px;
+      width: calc(100% - 48px);
+      padding: 16px;
+      background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .scan-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+    }
+    .scan-btn:disabled {
+      background: #94a3b8;
+      cursor: not-allowed;
+      transform: none;
+    }
+    .status-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      padding: 0 20px;
+    }
+    .status-card {
+      background: #f8fafc;
+      border-radius: 12px;
+      padding: 16px;
+      border: 2px solid transparent;
+      transition: all 0.3s ease;
+    }
+    .status-card.success {
+      border-color: #10b981;
+      background: #ecfdf5;
+    }
+    .status-card.error {
+      border-color: #ef4444;
+      background: #fef2f2;
+    }
+    .status-card.warning {
+      border-color: #f59e0b;
+      background: #fffbeb;
+    }
+    .status-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+    .status-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 14px;
+      font-weight: bold;
+      color: white;
+    }
+    .status-icon.success { background: #10b981; }
+    .status-icon.error { background: #ef4444; }
+    .status-icon.warning { background: #f59e0b; }
+    .status-icon.pending { background: #6b7280; }
+    .status-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #1e293b;
+    }
+    .status-value {
+      font-size: 13px;
+      color: #64748b;
+      margin-bottom: 12px;
+    }
+    .action-btn {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .action-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .action-btn.install {
+      background: #3b82f6;
+      color: white;
+    }
+    .action-btn.install:hover:not(:disabled) { background: #2563eb; }
+    .action-btn.installing {
+      background: #f59e0b;
+      color: white;
+    }
+    .action-btn.success {
+      background: #10b981;
+      color: white;
+    }
+    .progress-section {
+      padding: 20px;
+    }
+    .progress-bar {
+      height: 6px;
+      background: #e2e8f0;
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #1e3a8a, #3b82f6);
+      border-radius: 3px;
+      transition: width 0.5s ease;
+    }
+    .progress-text {
+      display: block;
+      text-align: center;
+      font-size: 12px;
+      color: #64748b;
+      margin-top: 8px;
+    }
+    .log-section {
+      margin: 0 20px;
+      background: #f1f5f9;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .log-header {
+      padding: 10px 14px;
+      background: #e2e8f0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      font-weight: 600;
+      color: #475569;
+    }
+    .clear-btn {
+      background: transparent;
+      border: none;
+      color: #64748b;
+      cursor: pointer;
+      font-size: 11px;
+      padding: 4px 8px;
+      border-radius: 4px;
+    }
+    .clear-btn:hover {
+      background: rgba(0, 0, 0, 0.1);
+    }
+    .log-content {
+      height: 120px;
+      overflow-y: auto;
+      padding: 10px 14px;
+      font-family: 'Consolas', 'Monaco', monospace;
+      font-size: 11px;
+      line-height: 1.5;
+      color: #334155;
+    }
+    .log-entry { margin-bottom: 4px; }
+    .log-entry.info { color: #3b82f6; }
+    .log-entry.success { color: #10b981; }
+    .log-entry.error { color: #ef4444; }
+    .log-entry.warning { color: #f59e0b; }
+    .install-all-section {
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+    }
+    .install-all-btn {
+      padding: 14px 40px;
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .install-all-btn:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+    }
+    .install-all-btn:disabled {
+      background: #94a3b8;
+      cursor: not-allowed;
+    }
+    .footer {
+      padding: 16px 20px;
+      background: #f8fafc;
+      border-top: 1px solid #e2e8f0;
+      text-align: center;
+      font-size: 12px;
+      color: #94a3b8;
+    }
+    .cmd-output {
+      display: none;
+      margin-top: 10px;
+      padding: 10px;
+      background: #1e293b;
+      color: #e2e8f0;
+      border-radius: 8px;
+      font-family: 'Consolas', 'Monaco', monospace;
+      font-size: 11px;
+      max-height: 150px;
+      overflow-y: auto;
+    }
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+    .modal {
+      background: white;
+      border-radius: 12px;
+      padding: 24px;
+      width: 90%;
+      max-width: 400px;
+      text-align: center;
+    }
+    .modal h3 {
+      margin-bottom: 12px;
+      color: #1e293b;
+    }
+    .modal p {
+      color: #64748b;
+      margin-bottom: 20px;
+    }
+    .modal-btn {
+      padding: 10px 24px;
+      background: #3b82f6;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>⚙️ Ziddy 安装器</h1>
+      <p>依赖检测与一键安装</p>
+    </div>
+
+    <button class="scan-btn" id="scan-btn" onclick="scanSystem()">
+      🔍 检测系统依赖
+    </button>
+
+    <div class="status-grid">
+      <div class="status-card" id="node-card">
+        <div class="status-header">
+          <div class="status-icon pending" id="node-icon">?</div>
+          <span class="status-title">Node.js</span>
+        </div>
+        <div class="status-value" id="node-value">未检测</div>
+        <button class="action-btn" id="node-action" onclick="installNode()" disabled>
+          安装 Node.js
+        </button>
+      </div>
+
+      <div class="status-card" id="npm-card">
+        <div class="status-header">
+          <div class="status-icon pending" id="npm-icon">?</div>
+          <span class="status-title">npm</span>
+        </div>
+        <div class="status-value" id="npm-value">未检测</div>
+        <button class="action-btn" id="npm-action" onclick="installNode()" disabled>
+          安装 npm
+        </button>
+      </div>
+
+      <div class="status-card" id="deps-card">
+        <div class="status-header">
+          <div class="status-icon pending" id="deps-icon">?</div>
+          <span class="status-title">项目依赖</span>
+        </div>
+        <div class="status-value" id="deps-value">未检测</div>
+        <button class="action-btn" id="deps-action" onclick="installDependencies()" disabled>
+          安装依赖
+        </button>
+      </div>
+    </div>
+
+    <div class="progress-section">
+      <div class="progress-bar">
+        <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
+      </div>
+      <span class="progress-text" id="progress-text">准备就绪</span>
+    </div>
+
+    <div class="log-section">
+      <div class="log-header">
+        <span>安装日志</span>
+        <button class="clear-btn" onclick="clearLog()">清空</button>
+      </div>
+      <div class="log-content" id="log-content"></div>
+    </div>
+
+    <div class="install-all-section">
+      <button class="install-all-btn" id="install-all-btn" onclick="installAll()" disabled>
+        📦 一键安装所有缺失依赖
+      </button>
+    </div>
+
+    <div class="footer">
+      <p>点击"检测系统依赖"开始检测并安装所需依赖</p>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="modal">
+    <div class="modal">
+      <h3>需要安装 Node.js</h3>
+      <p>您的系统尚未安装 Node.js，我们将为您打开下载页面。</p>
+      <p>安装完成后，请重新启动此安装器。</p>
+      <button class="modal-btn" onclick="openNodeDownload()">打开下载页面</button>
+    </div>
+  </div>
+
+  <script>
+    const scanResults = { node: null, npm: null, deps: null };
+    let isScanning = false;
+
+    function addLog(message, type = 'info') {
+      const logContent = document.getElementById('log-content');
+      const entry = document.createElement('div');
+      entry.className = `log-entry ${type}`;
+      const timestamp = new Date().toLocaleTimeString();
+      entry.innerHTML = `<span>[${timestamp}]</span> ${message}`;
+      logContent.appendChild(entry);
+      logContent.scrollTop = logContent.scrollHeight;
+    }
+
+    function clearLog() {
+      document.getElementById('log-content').innerHTML = '';
+    }
+
+    function updateProgress(percent, text) {
+      document.getElementById('progress-fill').style.width = `${percent}%`;
+      document.getElementById('progress-text').textContent = text;
+    }
+
+    function updateStatus(id, status, value, actionText, actionEnabled, actionClass) {
+      const card = document.getElementById(`${id}-card`);
+      const icon = document.getElementById(`${id}-icon`);
+      const valueEl = document.getElementById(`${id}-value`);
+      const actionBtn = document.getElementById(`${id}-action`);
+
+      card.className = `status-card ${status}`;
+      icon.className = `status-icon ${status}`;
+      icon.textContent = status === 'success' ? '✓' : status === 'error' ? '✗' : status === 'warning' ? '!' : '?';
+      valueEl.textContent = value;
+      actionBtn.textContent = actionText;
+      actionBtn.disabled = !actionEnabled;
+      actionBtn.className = `action-btn ${actionClass}`;
+    }
+
+    function updateInstallAllButton() {
+      const hasMissing = !scanResults.node?.installed || !scanResults.npm?.installed || !scanResults.deps?.hasNodeModules;
+      const installAllBtn = document.getElementById('install-all-btn');
+      
+      if (hasMissing) {
+        installAllBtn.disabled = false;
+        installAllBtn.textContent = '📦 一键安装所有缺失依赖';
+      } else {
+        installAllBtn.disabled = true;
+        installAllBtn.textContent = '✓ 所有依赖已安装完成';
+      }
+    }
+
+    async function scanSystem() {
+      if (isScanning) return;
+      isScanning = true;
+      const scanBtn = document.getElementById('scan-btn');
+      scanBtn.disabled = true;
+      scanBtn.textContent = '检测中...';
+
+      addLog('正在检测系统依赖...', 'info');
+      updateProgress(10, '检测中...');
+
+      try {
+        const nodeResult = await checkNode();
+        const npmResult = await checkNpm();
+        const depsResult = await checkDependencies();
+
+        scanResults.node = nodeResult;
+        scanResults.npm = npmResult;
+        scanResults.deps = depsResult;
+
+        if (nodeResult.installed) {
+          updateStatus('node', 'success', nodeResult.version, '已安装', false, 'success');
+          addLog(`检测到 Node.js: ${nodeResult.version}`, 'success');
+        } else {
+          updateStatus('node', 'error', '未安装', '安装 Node.js', true, 'install');
+          addLog('错误: Node.js 未安装', 'error');
+        }
+
+        if (npmResult.installed) {
+          updateStatus('npm', 'success', npmResult.version, '已安装', false, 'success');
+          addLog(`检测到 npm: ${npmResult.version}`, 'success');
+        } else {
+          updateStatus('npm', 'error', '未安装', '安装 npm', true, 'install');
+          addLog('错误: npm 未安装', 'error');
+        }
+
+        if (depsResult.hasPackageJson && depsResult.hasNodeModules) {
+          updateStatus('deps', 'success', '依赖已安装', '已安装', false, 'success');
+          addLog('项目依赖已安装', 'success');
+        } else if (depsResult.hasPackageJson && !depsResult.hasNodeModules) {
+          updateStatus('deps', 'warning', '依赖缺失', '安装依赖', true, 'install');
+          addLog('项目依赖未找到，需要安装', 'warning');
+        } else {
+          updateStatus('deps', 'error', '缺少 package.json', '检查项目', false, 'install');
+          addLog('错误: package.json 未找到', 'error');
+        }
+
+        updateInstallAllButton();
+        updateProgress(100, '检测完成');
+        addLog('系统检测完成', 'info');
+      } catch (error) {
+        addLog(`检测失败: ${error.message}`, 'error');
+        updateProgress(0, '检测失败');
+      }
+
+      isScanning = false;
+      scanBtn.disabled = false;
+      scanBtn.textContent = '🔍 检测系统依赖';
+    }
+
+    function checkNode() {
+      return new Promise((resolve) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', 'http://localhost:3000/check-node', true);
+        xhr.timeout = 3000;
+        xhr.onreadystatechange = function() {
+          if (xhr.readyState === 4) {
+            if (xhr.status === 200) {
+              try {
+                const data = JSON.parse(xhr.responseText);
+                resolve(data);
+              } catch {
+                resolve({ installed: false, version: null });
+              }
+            } else {
+              resolve({ installed: false, version: null });
+            }
+          }
+        };
+        xhr.ontimeout = function() {
+          resolve({ installed: false, version: null });
+        };
+        xhr.onerror = function() {
+          resolve({ installed: false, version: null });
+        };
+        xhr.send();
+      });
+    }
+
+    function checkNpm() {
+      return new Promise((resolve) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', 'http://localhost:3000/check-npm', true);
+        xhr.timeout = 3000;
+        xhr.onreadystatechange = function() {
+          if (xhr.readyState === 4) {
+            if (xhr.status === 200) {
+              try {
+                const data = JSON.parse(xhr.responseText);
+                resolve(data);
+              } catch {
+                resolve({ installed: false, version: null });
+              }
+            } else {
+              resolve({ installed: false, version: null });
+            }
+          }
+        };
+        xhr.ontimeout = function() {
+          resolve({ installed: false, version: null });
+        };
+        xhr.onerror = function() {
+          resolve({ installed: false, version: null });
+        };
+        xhr.send();
+      });
+    }
+
+    function checkDependencies() {
+      return new Promise((resolve) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', 'http://localhost:3000/check-dependencies', true);
+        xhr.timeout = 3000;
+        xhr.onreadystatechange = function() {
+          if (xhr.readyState === 4) {
+            if (xhr.status === 200) {
+              try {
+                const data = JSON.parse(xhr.responseText);
+                resolve(data);
+              } catch {
+                resolve({ hasPackageJson: false, hasNodeModules: false });
+              }
+            } else {
+              resolve({ hasPackageJson: false, hasNodeModules: false });
+            }
+          }
+        };
+        xhr.ontimeout = function() {
+          resolve({ hasPackageJson: false, hasNodeModules: false });
+        };
+        xhr.onerror = function() {
+          resolve({ hasPackageJson: false, hasNodeModules: false });
+        };
+        xhr.send();
+      });
+    }
+
+    function installNode() {
+      document.getElementById('modal').style.display = 'flex';
+    }
+
+    function openNodeDownload() {
+      window.open('https://nodejs.org/zh-cn/download/', '_blank');
+      document.getElementById('modal').style.display = 'none';
+      addLog('正在打开 Node.js 下载页面...', 'info');
+    }
+
+    async function installDependencies() {
+      const actionBtn = document.getElementById('deps-action');
+      actionBtn.textContent = '安装中...';
+      actionBtn.disabled = true;
+      actionBtn.className = 'action-btn installing';
+
+      updateProgress(30, '正在安装依赖...');
+      addLog('开始执行 npm install...', 'info');
+
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', 'http://localhost:3000/install-dependencies', true);
+      xhr.onreadystatechange = function() {
+        if (xhr.readyState === 4) {
+          if (xhr.status === 200) {
+            try {
+              const result = JSON.parse(xhr.responseText);
+              if (result.success) {
+                updateStatus('deps', 'success', '依赖安装完成', '已安装', false, 'success');
+                addLog('依赖安装成功', 'success');
+                updateProgress(100, '安装完成');
+              } else {
+                updateStatus('deps', 'error', '安装失败', '重试', true, 'install');
+                addLog(`依赖安装失败: ${result.output.substring(0, 100)}`, 'error');
+                updateProgress(0, '安装失败');
+                alert('依赖安装失败:\n' + result.output.substring(0, 500));
+              }
+              updateInstallAllButton();
+            } catch (error) {
+              updateStatus('deps', 'error', '安装失败', '重试', true, 'install');
+              addLog('解析安装结果失败', 'error');
+            }
+          } else {
+            updateStatus('deps', 'error', '安装失败', '重试', true, 'install');
+            addLog('无法连接到安装服务器', 'error');
+            alert('请先启动安装服务器。\n运行: node installer-server.js');
+          }
+        }
+      };
+      xhr.send();
+    }
+
+    async function installAll() {
+      const installAllBtn = document.getElementById('install-all-btn');
+      installAllBtn.disabled = true;
+      installAllBtn.textContent = '安装中...';
+
+      if (!scanResults.node?.installed || !scanResults.npm?.installed) {
+        installNode();
+        return;
+      }
+
+      if (scanResults.deps?.hasPackageJson && !scanResults.deps?.hasNodeModules) {
+        installDependencies();
+      }
+
+      setTimeout(() => {
+        installAllBtn.textContent = '📦 一键安装所有缺失依赖';
+      }, 2000);
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      addLog('Ziddy 安装器已初始化', 'info');
+    });
+  </script>
+</body>
+</html>

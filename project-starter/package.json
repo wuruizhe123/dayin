@@ -1,0 +1,38 @@
+{
+  "name": "project-starter",
+  "version": "1.0.0",
+  "description": "快速启动项目的命令行工具，支持前端、后端、全栈等多种项目类型",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "project-starter": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "ts-node src/index.ts",
+    "prepare": "npm run build"
+  },
+  "keywords": [
+    "project",
+    "starter",
+    "scaffold",
+    "cli",
+    "init"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "chalk": "^5.3.0",
+    "commander": "^11.1.0",
+    "inquirer": "^9.2.12",
+    "shelljs": "^0.8.5"
+  },
+  "devDependencies": {
+    "@types/inquirer": "^9.0.7",
+    "@types/node": "^20.10.4",
+    "@types/shelljs": "^0.8.15",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3"
+  }
+}

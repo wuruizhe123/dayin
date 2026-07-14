@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ziddy Document Print System</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="logo">
+        <div class="logo-icon">Z</div>
+      </div>
+      <div class="title-section">
+        <h1>Ziddy Document Print System</h1>
+        <p id="version-info">Loading...</p>
+      </div>
+    </div>
+
+    <div class="status-panel">
+      <div class="status-item" id="node-status">
+        <div class="status-icon" id="node-icon">?</div>
+        <div class="status-content">
+          <span class="status-label">Node.js</span>
+          <span class="status-value" id="node-version">Checking...</span>
+        </div>
+      </div>
+      <div class="status-item" id="npm-status">
+        <div class="status-icon" id="npm-icon">?</div>
+        <div class="status-content">
+          <span class="status-label">npm</span>
+          <span class="status-value" id="npm-version">Checking...</span>
+        </div>
+      </div>
+      <div class="status-item" id="dep-status">
+        <div class="status-icon" id="dep-icon">?</div>
+        <div class="status-content">
+          <span class="status-label">Dependencies</span>
+          <span class="status-value" id="dep-value">Checking...</span>
+        </div>
+      </div>
+      <div class="status-item" id="integrity-status">
+        <div class="status-icon" id="integrity-icon">?</div>
+        <div class="status-content">
+          <span class="status-label">Integrity</span>
+          <span class="status-value" id="integrity-value">Checking...</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="progress-section">
+      <div class="progress-bar">
+        <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
+      </div>
+      <span class="progress-text" id="progress-text">Ready</span>
+    </div>
+
+    <div class="log-section">
+      <div class="log-header">
+        <span>System Log</span>
+        <button class="clear-btn" onclick="clearLog()">Clear</button>
+      </div>
+      <div class="log-content" id="log-content"></div>
+    </div>
+
+    <div class="button-section">
+      <button class="btn btn-primary" id="start-btn" onclick="startApplication()">
+        <span class="btn-icon">▶</span>
+        Start Application
+      </button>
+      <button class="btn btn-secondary" id="browser-btn" onclick="openBrowser()" disabled>
+        <span class="btn-icon">🌐</span>
+        Open Browser
+      </button>
+      <button class="btn btn-danger" id="stop-btn" onclick="stopApplication()" disabled>
+        <span class="btn-icon">⏹</span>
+        Stop
+      </button>
+    </div>
+
+    <div class="footer">
+      <p>Double-click to launch. For support, contact the development team.</p>
+    </div>
+  </div>
+
+  <script src="renderer.js"></script>
+</body>
+</html>

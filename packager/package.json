@@ -1,0 +1,22 @@
+{
+  "name": "ziddy-packager",
+  "version": "1.0.0",
+  "description": "专业打包解决方案 - 将应用程序及其所有依赖项打包成可移植格式",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "build": "node src/index.js",
+    "dev": "node src/index.js",
+    "test": "node src/test.js"
+  },
+  "dependencies": {
+    "archiver": "^6.0.1",
+    "chalk": "^5.3.0",
+    "crypto": "^1.0.1",
+    "fs-extra": "^11.2.0",
+    "inquirer": "^9.2.12",
+    "semver": "^7.5.4",
+    "winston": "^3.11.0"
+  },
+  "devDependencies": {}
+}
