@@ -5,9 +5,7 @@ export const Header = () => {
     <header className="bg-white/80 backdrop-blur-md border-b border-white/60 px-6 py-4 shadow-sm">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/30">
-            <Printer className="w-7 h-7 text-white" />
-          </div>
+          <Printer className="w-8 h-8 text-gray-800" />
           <div>
             <h1 className="text-2xl font-display font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent">
               打印中心
