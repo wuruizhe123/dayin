@@ -1,4 +1,5 @@
 import React from 'react';
+import { Outlet, Navigate, useLocation } from 'react-router-dom';
 import { Header } from './components/Header';
 import { FileUpload } from './components/FileUpload';
 import { DocumentList } from './components/DocumentList';
@@ -8,13 +9,45 @@ import { PrintSettings } from './components/PrintSettings';
 import { PrintControl } from './components/PrintControl';
 import { PrintQueue } from './components/PrintQueue';
 import { ParseStatus } from './components/ParseStatus';
+import { Login } from './components/admin/Login';
+import { AdminLayout } from './components/admin/AdminLayout';
+import { Dashboard } from './components/admin/Dashboard';
+import { PrintHistory } from './components/admin/PrintHistory';
+import { PrinterManagement } from './components/admin/PrinterManagement';
+import { SystemSettings } from './components/admin/SystemSettings';
+import { ChangePassword } from './components/admin/ChangePassword';
 import { usePrintStore } from './stores/printStore';
+import { useAdminStore } from './stores/adminStore';
 
-export default function App(): React.ReactElement {
+export function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const isAuthenticated = useAdminStore((state) => state.isAuthenticated);
+  const location = useLocation();
+
+  if (!isAuthenticated) {
+    return <Navigate to="/admin/login" state={{ from: location.pathname }} replace />;
+  }
+
+  return <>{children}</>;
+}
+
+
+
+export function LoginPage() {
+  const isAuthenticated = useAdminStore((state) => state.isAuthenticated);
+  const location = useLocation();
+
+  if (isAuthenticated) {
+    const redirectPath = (location.state as { from?: string })?.from || '/admin/dashboard';
+    return <Navigate to={redirectPath} replace />;
+  }
+
+  return <Login />;
+}
+
+function MainApp(): React.ReactElement {
   const { printQueue } = usePrintStore();
 
   return (
-
     <div className="min-h-screen flex flex-col">
       <Header />
       
@@ -74,3 +107,25 @@ export default function App(): React.ReactElement {
     </div>
   );
 }
+
+export default MainApp;
+
+export const AdminRoutes = [
+  { path: '/admin/login', element: <LoginPage /> },
+  {
+    path: '/admin',
+    element: (
+      <ProtectedRoute>
+        <AdminLayout />
+      </ProtectedRoute>
+    ),
+    children: [
+      { path: 'dashboard', element: <Dashboard /> },
+      { path: 'history', element: <PrintHistory /> },
+      { path: 'printers', element: <PrinterManagement /> },
+      { path: 'settings', element: <SystemSettings /> },
+      { path: 'change-password', element: <ChangePassword /> },
+      { path: '', element: <Navigate to="dashboard" /> },
+    ],
+  },
+];

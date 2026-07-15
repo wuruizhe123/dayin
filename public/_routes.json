@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "include": [
+    "/*"
+  ],
+  "exclude": [
+    "/api/*"
+  ],
+  "error_pages": {
+    "404": {
+      "serve": "/index.html",
+      "status_code": 200
+    }
+  }
+}

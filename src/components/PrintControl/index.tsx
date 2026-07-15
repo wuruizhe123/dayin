@@ -1,7 +1,10 @@
 import { useState } from 'react';
-import { Printer, Loader2, CheckCircle, AlertCircle, Play, Layers } from 'lucide-react';
+import { Printer, Loader2, CheckCircle, AlertCircle, Play, Layers, Zap, FileText } from 'lucide-react';
 import { usePrintStore } from '../../stores/printStore';
-import { generatePrintDocument, openPrintWindow } from '../../utils/printUtils';
+import { useAdminStore } from '../../stores/adminStore';
+import { SilentPrintPanel } from '../SilentPrint/SilentPrintPanel';
+
+import { generatePrintDocument, openPrintWindow, silentPrintToPDF } from '../../utils/printUtils';
 
 export const PrintControl = () => {
   const { 
@@ -19,12 +22,21 @@ export const PrintControl = () => {
     updateQueueItemStatus,
     setCurrentPrintIndex,
     addToPrintQueue,
-    clearPrintQueue
+    clearPrintQueue,
+    printers
   } = usePrintStore();
+  
+  const { addPrintRecord } = useAdminStore();
   
   const [showConfirm, setShowConfirm] = useState(false);
   const [isBatchMode, setIsBatchMode] = useState(false);
   const [useParseResult, setUseParseResult] = useState(false);
+  const [printMode, setPrintMode] = useState<'normal' | 'silent'>('normal');
+
+  const getPrinterName = (printerId: string) => {
+    const printer = printers.find((p) => p.id === printerId);
+    return printer?.name || '未知打印机';
+  };
 
   const selectedFile = files.find((f) => f.id === selectedFileId);
   const pendingItems = printQueue.filter((item) => item.status === 'pending');
@@ -50,16 +62,53 @@ export const PrintControl = () => {
       const htmlContent = await generatePrintDocument(printFiles, settings, useParseResult);
       
       setPrintStatus('printing');
-      await openPrintWindow(htmlContent);
+      
+      if (printMode === 'silent') {
+        await silentPrintToPDF(htmlContent, { 
+          fileName: selectedFile.name.replace(/\.[^/.]+$/, '') + '.pdf' 
+        });
+      } else {
+        await openPrintWindow(htmlContent);
+      }
 
       setPrintStatus('completed');
+      
+      addPrintRecord({
+        id: crypto.randomUUID(),
+        fileName: selectedFile.name,
+        fileType: selectedFile.type,
+        fileSize: selectedFile.size,
+        printerName: getPrinterName(settings.selectedPrinterId),
+        copies: settings.copies,
+        paperSize: settings.paperSize,
+        status: 'completed',
+        timestamp: new Date().toISOString(),
+        duration: 0,
+      });
+      
       setTimeout(() => {
         setPrintStatus('idle');
         setIsPrinting(false);
       }, 3000);
     } catch (error) {
-      setPrintError(error instanceof Error ? error.message : '打印失败');
+      const errorMessage = error instanceof Error ? error.message : '打印失败';
+      setPrintError(errorMessage);
       setPrintStatus('error');
+      
+      addPrintRecord({
+        id: crypto.randomUUID(),
+        fileName: selectedFile.name,
+        fileType: selectedFile.type,
+        fileSize: selectedFile.size,
+        printerName: getPrinterName(settings.selectedPrinterId),
+        copies: settings.copies,
+        paperSize: settings.paperSize,
+        status: 'failed',
+        error: errorMessage,
+        timestamp: new Date().toISOString(),
+        duration: 0,
+      });
+      
       setTimeout(() => {
         setPrintStatus('idle');
         setPrintError(null);
@@ -96,10 +145,31 @@ export const PrintControl = () => {
         updateQueueItemStatus(item.id, 'printing');
       }
       
-      await openPrintWindow(htmlContent);
+      if (printMode === 'silent') {
+        await silentPrintToPDF(htmlContent, { 
+          fileName: `batch-print-${Date.now()}.pdf` 
+        });
+      } else {
+        await openPrintWindow(htmlContent);
+      }
       
       pendingItems.forEach((item) => {
         updateQueueItemStatus(item.id, 'completed');
+        const file = files.find((f) => f.id === item.fileId);
+        if (file) {
+          addPrintRecord({
+            id: crypto.randomUUID(),
+            fileName: file.name,
+            fileType: file.type,
+            fileSize: file.size,
+            printerName: getPrinterName(settings.selectedPrinterId),
+            copies: settings.copies,
+            paperSize: settings.paperSize,
+            status: 'completed',
+            timestamp: new Date().toISOString(),
+            duration: 0,
+          });
+        }
       });
 
       setPrintStatus('completed');
@@ -115,6 +185,22 @@ export const PrintControl = () => {
       
       pendingItems.forEach((item) => {
         updateQueueItemStatus(item.id, 'failed', message);
+        const file = files.find((f) => f.id === item.fileId);
+        if (file) {
+          addPrintRecord({
+            id: crypto.randomUUID(),
+            fileName: file.name,
+            fileType: file.type,
+            fileSize: file.size,
+            printerName: getPrinterName(settings.selectedPrinterId),
+            copies: settings.copies,
+            paperSize: settings.paperSize,
+            status: 'failed',
+            error: message,
+            timestamp: new Date().toISOString(),
+            duration: 0,
+          });
+        }
       });
     }
   };
@@ -222,6 +308,25 @@ export const PrintControl = () => {
         </button>
       </div>
 
+      <div className="flex items-center justify-between mb-4 p-3 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-xl border border-purple-200">
+        <div className="flex items-center gap-2">
+          <Zap className="w-4 h-4 text-purple-600" />
+          <span className="text-sm text-purple-700 font-medium">静默打印模式</span>
+        </div>
+        <button
+          onClick={() => setPrintMode(printMode === 'normal' ? 'silent' : 'normal')}
+          className={`
+            relative w-12 h-6 rounded-full transition-colors
+            ${printMode === 'silent' ? 'bg-purple-600' : 'bg-gray-300'}
+          `}
+        >
+          <span className={`
+            absolute top-1 w-4 h-4 bg-white rounded-full transition-transform
+            ${printMode === 'silent' ? 'translate-x-7' : 'translate-x-1'}
+          `}></span>
+        </button>
+      </div>
+
       <div className="flex items-center justify-between mb-4 p-3 bg-purple-50 rounded-xl border border-purple-200">
         <div className="flex items-center gap-2">
           <CheckCircle className="w-4 h-4 text-purple-600" />
@@ -241,7 +346,24 @@ export const PrintControl = () => {
         </button>
       </div>
 
-      {!isBatchMode ? (
+      {printMode === 'silent' ? (
+        <SilentPrintPanel 
+          files={isBatchMode ? pendingItems.map(item => files.find(f => f.id === item.fileId)).filter(Boolean) as typeof files : selectedFile ? [selectedFile] : []}
+          useParseResult={useParseResult}
+          onPrintComplete={() => {
+            setPrintStatus('completed');
+            setTimeout(() => setPrintStatus('idle'), 3000);
+          }}
+          onPrintError={(error) => {
+            setPrintError(error);
+            setPrintStatus('error');
+            setTimeout(() => {
+              setPrintStatus('idle');
+              setPrintError(null);
+            }, 3000);
+          }}
+        />
+      ) : !isBatchMode ? (
         <div className="space-y-3">
           <button
             onClick={() => setShowConfirm(true)}

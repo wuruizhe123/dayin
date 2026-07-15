@@ -469,3 +469,99 @@ export const openPrintWindow = (htmlContent: string): Promise<void> => {
     }, 1000);
   });
 };
+
+export interface SilentPrintOptions {
+  fileName?: string;
+  downloadOnly?: boolean;
+}
+
+export const supportsSilentPrint = (): boolean => {
+  return typeof (window as any).chrome?.print?.printToPDF === 'function';
+};
+
+export const downloadAsPDF = (htmlContent: string, fileName: string = 'print.pdf'): Promise<void> => {
+  return new Promise((resolve, reject) => {
+    const printWindow = window.open('', '_blank');
+    
+    if (!printWindow) {
+      reject(new Error('无法打开打印窗口，请检查浏览器弹窗设置'));
+      return;
+    }
+
+    printWindow.document.write(htmlContent);
+    printWindow.document.close();
+
+    const tryDownload = () => {
+      try {
+        const blob = new Blob([htmlContent], { type: 'application/pdf' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        a.click();
+        URL.revokeObjectURL(url);
+        printWindow.close();
+        resolve();
+      } catch (error) {
+        reject(error);
+      }
+    };
+
+    printWindow.onload = () => {
+      tryDownload();
+    };
+
+    setTimeout(() => {
+      tryDownload();
+    }, 1000);
+  });
+};
+
+export const silentPrintToPDF = (htmlContent: string, options: SilentPrintOptions = {}): Promise<void> => {
+  return new Promise((resolve, reject) => {
+    const chrome = (window as any).chrome;
+    
+    if (!chrome?.print?.printToPDF) {
+      downloadAsPDF(htmlContent, options.fileName).then(resolve).catch(reject);
+      return;
+    }
+
+    chrome.print.printToPDF(
+      {
+        landscape: false,
+        displayHeaderFooter: false,
+        printBackground: true,
+        scale: 1,
+      },
+      (data: string | null) => {
+        if (data) {
+          const blob = new Blob([data], { type: 'application/pdf' });
+          const url = URL.createObjectURL(blob);
+          
+          if (options.downloadOnly) {
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = options.fileName || 'print.pdf';
+            a.click();
+            URL.revokeObjectURL(url);
+            resolve();
+          } else {
+            const printWindow = window.open(url, '_blank');
+            if (printWindow) {
+              printWindow.onload = () => {
+                printWindow.print();
+                URL.revokeObjectURL(url);
+                resolve();
+              };
+            } else {
+              URL.revokeObjectURL(url);
+              reject(new Error('无法打开打印预览窗口'));
+            }
+          }
+        } else {
+          downloadAsPDF(htmlContent, options.fileName).then(resolve).catch(reject);
+        }
+      }
+    );
+  });
+};
